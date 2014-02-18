@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en" class="no-js">
+<head>
+    <meta charset="utf-8" />
+    
+    <!-- Small devices set viewscreen scale -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <!-- Title -->
+    <title>AvatarPix</title>
+    <meta name="title" content="AvatarPix" />
+
+    <link href="css/bootstrap.min.css" rel="stylesheet">
+    <link href="css/bootstrap-theme.min.css" rel="stylesheet">
+</head>
+<body id="content">
+    
+    <div class="container">
+        <div id="header" class="jumbotron">
+            <h1>AvatarPix</h1>
+            <h2>Resize n crop dat bitch!</h2>
+        </div>
+        <div class="row">
+            <div class="col-md-4">
+                <div class="panel panel-default">
+                    <div class="panel-heading">Create</div>
+                    <div class="panel-body">
+                        <form>
+                            <div class="form-group">
+                                <label for="file">Original image</label>
+                                <input type="file" id="file" />
+                            </div>
+                            <div class="form-inline">
+                                <label for="xdim">Final dimensions</label>
+                                <div class="form-group">
+                                    <label for="xdim" class="sr-only">X dimension</label>
+                                    <input type="text" id="xdim" class="form-control" placeholder="X">
+                                </div>
+                                <span>X</span>
+                                <div class="form-group">
+                                    <label for="ydim" class="sr-only">Y dimension</label>
+                                    <input type="text" id="ydim" class="form-control" placeholder="Y">
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-8">
+                <div class="panel panel-default">
+                    <div class="panel-heading">
+                        Your Avatar
+                        <a href="#" class="btn btn-success btn-xs pull-right" id="save" filename="file.png" target="_blank">
+                            Save <span class="glyphicon glyphicon-save"></span>
+                        </a>
+                    </div>
+                    <div class="panel-body">
+                        <canvas id="output" width="688"></canvas>
+                        <div class="alert alert-info" id="instruct1">Fill in the input to the left first!</div>
+                        <div class="alert alert-info" id="instruct2">Drag the box to crop and resize</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js"></script>
+    <script src="//ajax.googleapis.com/ajax/libs/jqueryui/1.9.2/jquery-ui.min.js"></script>
+    <script src="//code.createjs.com/createjs-2013.09.25.min.js"></script>
+    <script src="js/bootstrap.min.js"></script>
+    
+    <!-- No script detection for CSS -->
+    <script>
+        $(document).ready(function() {
+            var offset_bottom = 0,
+                offset_baseline = -5,
+
+                save_button = $('#save'),
+                canvas = document.getElementById('output'),
+                stage = new createjs.Stage(canvas),
+                context = canvas.getContext('2d'),
+
+                el_image,
+                el_contain_all = new createjs.Container()
+
+            function update_canvas() {
+                stage.update()
+            }
+
+            stage.addChild(el_contain_all)
+            //el_contain_all.addChild()
+
+            update_canvas()
+
+            $(canvas).hide()
+            $('#instruct2').hide()
+
+            $('#file').on('change', function(ev) {
+                var file = ev.target.files[0],
+                    reader = new FileReader()
+
+                $(reader).on('load', function(ev) {
+                    var new_height, bound
+
+                    if (el_image != null) {
+                        stage.removeChild(el_image)
+                    }
+
+                    el_image = new createjs.Bitmap(ev.target.result)
+
+                    stage.addChildAt(el_image, 0)
+
+                    // Resize image height
+                    bound = el_image.getBounds()
+                    ratio = canvas.width / bound.width
+
+                    // Set heights, draw image
+                    el_image.setTransform(0, 0, ratio, ratio)
+                    canvas.height = bound.height * ratio
+
+                    // Toggle vis
+                    update_canvas()
+                    $(canvas).show()
+                    $('#instruct1').hide()
+                    $('#instruct2').show()
+                })
+                $('#xdim, #ydim').on('keyup', function(ev) {
+                    //console.dir(ev)
+                })
+
+                reader.readAsDataURL(file)
+            })
+            $('#save').on('mouseover', function(ev) {
+                $(ev.target).attr('href', canvas.toDataURL('image/png'))
+            })
+        })
+    </script>
+</body>
+</html>
