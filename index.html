@@ -34,12 +34,12 @@
                                 <label for="xdim">Final dimensions</label>
                                 <div class="form-group">
                                     <label for="xdim" class="sr-only">X dimension</label>
-                                    <input type="text" id="xdim" class="form-control" placeholder="X">
+                                    <input type="text" id="xdim" class="form-control" placeholder="X" value="100">
                                 </div>
                                 <span>X</span>
                                 <div class="form-group">
                                     <label for="ydim" class="sr-only">Y dimension</label>
-                                    <input type="text" id="ydim" class="form-control" placeholder="Y">
+                                    <input type="text" id="ydim" class="form-control" placeholder="Y" value="100">
                                 </div>
                             </div>
                         </form>
@@ -79,10 +79,12 @@
                 context = canvas.getContext('2d'),
 
                 el_image,
-                el_user_bound = new fabric.Rect()
+                el_user_bound = new fabric.Rect({height: 100, width: 100})
 
             $(canvas).hide()
             $('#instruct2').hide()
+
+            el_user_bound.setControlsVisibility({mtr: false, mb: false, mr: false, ml: false, mt: false})
 
             $('#file').on('change', function(ev) {
                 var file = ev.target.files[0],
@@ -96,7 +98,13 @@
                     }
 
                     fabric.Image.fromURL(ev.target.result, function (image) {
+                        // Clean up
+                        canvas.remove(el_image)
+                        canvas.remove(el_user_bound)
+
+                        // Set vars
                         el_image = image
+                        image.selectable = false
 
                         // Resize image height
                         // ratio = canvas.width / image.width
@@ -110,6 +118,7 @@
 
                         // Toggle vis
                         canvas.add(el_image)
+                        canvas.add(el_user_bound)
                         $(canvas).show()
                         $('#instruct1').hide()
                         $('#instruct2').show()
@@ -117,7 +126,26 @@
 
                 })
                 $('#xdim, #ydim').on('keyup', function(ev) {
-                    //console.dir(ev)
+                    // Parse numeric
+                    numericX = numericY = 0
+                    try {
+                        numericX = parseInt($('#xdim').val())
+                        numericY = parseInt($('#ydim').val())
+                    } catch(e) {
+                        return
+                    }
+
+                    // Maths/set vals
+                    ratio = numericX / numericY
+                    if (ev.target.id == 'xdim') {
+                        el_user_bound.setWidth(el_user_bound.height * ratio)
+                    } else {
+                        el_user_bound.setHeight(el_user_bound.width / ratio)
+                    }
+
+                    // Reset and redraw
+                    el_user_bound.setCoords()
+                    canvas.renderAll()
                 })
 
                 reader.readAsDataURL(file)
