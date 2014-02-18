@@ -65,7 +65,7 @@
     </div>
     <script src="//ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js"></script>
     <script src="//ajax.googleapis.com/ajax/libs/jqueryui/1.9.2/jquery-ui.min.js"></script>
-    <script src="//code.createjs.com/createjs-2013.09.25.min.js"></script>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/fabric.js/1.4.0/fabric.min.js"></script>
     <script src="js/bootstrap.min.js"></script>
     
     <!-- No script detection for CSS -->
@@ -75,21 +75,11 @@
                 offset_baseline = -5,
 
                 save_button = $('#save'),
-                canvas = document.getElementById('output'),
-                stage = new createjs.Stage(canvas),
+                canvas = new fabric.Canvas('output'),
                 context = canvas.getContext('2d'),
 
                 el_image,
-                el_contain_all = new createjs.Container()
-
-            function update_canvas() {
-                stage.update()
-            }
-
-            stage.addChild(el_contain_all)
-            //el_contain_all.addChild()
-
-            update_canvas()
+                el_user_bound = new fabric.Rect()
 
             $(canvas).hide()
             $('#instruct2').hide()
@@ -102,26 +92,29 @@
                     var new_height, bound
 
                     if (el_image != null) {
-                        stage.removeChild(el_image)
+                        canvas.remove(el_image)
                     }
 
-                    el_image = new createjs.Bitmap(ev.target.result)
+                    fabric.Image.fromURL(ev.target.result, function (image) {
+                        el_image = image
 
-                    stage.addChildAt(el_image, 0)
+                        // Resize image height
+                        // ratio = canvas.width / image.width
+                        // image.setScaleX(ratio)
+                        // image.setScaleY(ratio)
+                        // canvas.setHeight(image.height * ratio)
 
-                    // Resize image height
-                    bound = el_image.getBounds()
-                    ratio = canvas.width / bound.width
+                        // Set heights, draw image
+                        canvas.setWidth(image.width)
+                        canvas.setHeight(image.height)
 
-                    // Set heights, draw image
-                    el_image.setTransform(0, 0, ratio, ratio)
-                    canvas.height = bound.height * ratio
+                        // Toggle vis
+                        canvas.add(el_image)
+                        $(canvas).show()
+                        $('#instruct1').hide()
+                        $('#instruct2').show()
+                    })
 
-                    // Toggle vis
-                    update_canvas()
-                    $(canvas).show()
-                    $('#instruct1').hide()
-                    $('#instruct2').show()
                 })
                 $('#xdim, #ydim').on('keyup', function(ev) {
                     //console.dir(ev)
