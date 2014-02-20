@@ -72,16 +72,31 @@
     <!-- No script detection for CSS -->
     <script>
         $(document).ready(function() {
-            var offset_bottom = 0,
-                offset_baseline = -5,
-
-                save_button = $('#save'),
+            var save_button = $('#save'),
                 input_canvas = new fabric.Canvas('input'),
                 output_canvas = new fabric.Canvas('output'),
 
+                user_bound_border_width = 2,
+
                 el_image,
-                el_user_bound = new fabric.Rect({height: 100, width: 100, fill: null, stroke: null})
-                el_user_bound_outline = new fabric.Rect({height: 100, width: 100, fill: null, stroke: 'black', selectable: false})
+                el_user_bound = new fabric.Rect({
+                    height: 100,
+                    width: 100,
+                    fill: null,
+                    stroke: null,
+                    
+                    transparentCorners: false,
+                    hasBorders: false
+                }),
+                el_user_bound_outline = new fabric.Rect({
+                    height: 100,
+                    width: 100,
+                    selectable: false
+                    strokeWidth: user_bound_border_width,
+
+                    fill: null,
+                    stroke: 'black',
+                })
 
 
             function getDims() {
@@ -97,10 +112,10 @@
 
 
             function update_outline() {
-                el_user_bound_outline.left = el_user_bound.left
-                el_user_bound_outline.top = el_user_bound.top
-                el_user_bound_outline.width = el_user_bound.width * el_user_bound.scaleX
-                el_user_bound_outline.height = el_user_bound.height * el_user_bound.scaleY
+                el_user_bound_outline.left = el_user_bound.left - user_bound_border_width
+                el_user_bound_outline.top = el_user_bound.top - user_bound_border_width
+                el_user_bound_outline.width = (el_user_bound.width * el_user_bound.scaleX) + (user_bound_border_width * 2)
+                el_user_bound_outline.height = (el_user_bound.height * el_user_bound.scaleY) + (user_bound_border_width * 2)
             }
             function handle_user_bound_change(ev) {
                 if (ev.target && ev.target === el_user_bound) {
