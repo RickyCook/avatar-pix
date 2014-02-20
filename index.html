@@ -30,8 +30,8 @@
                                 <label for="file">Original image</label>
                                 <input type="file" id="file" />
                             </div>
+                            <label for="xdim">Final dimensions</label>
                             <div class="form-inline">
-                                <label for="xdim">Final dimensions</label>
                                 <div class="form-group">
                                     <label for="xdim" class="sr-only">X dimension</label>
                                     <input type="text" id="xdim" class="form-control" placeholder="X" value="100">
@@ -55,7 +55,8 @@
                         </a>
                     </div>
                     <div class="panel-body">
-                        <canvas id="output" width="688"></canvas>
+                        <canvas id="input" width="688"></canvas>
+                        <canvas id="output" style="display: none"></canvas>
                         <div class="alert alert-info" id="instruct1">Fill in the input to the left first!</div>
                         <div class="alert alert-info" id="instruct2">Drag the box to crop and resize</div>
                     </div>
@@ -75,16 +76,42 @@
                 offset_baseline = -5,
 
                 save_button = $('#save'),
-                canvas = new fabric.Canvas('output'),
-                context = canvas.getContext('2d'),
+                input_canvas = new fabric.Canvas('input'),
+                output_canvas = new fabric.Canvas('output'),
 
                 el_image,
-                el_user_bound = new fabric.Rect({height: 100, width: 100, fill: null, stroke: 'black'})
+                el_user_bound = new fabric.Rect({height: 100, width: 100, fill: null, stroke: null})
+                el_user_bound_outline = new fabric.Rect({height: 100, width: 100, fill: null, stroke: 'black', selectable: false})
 
-            $(canvas).hide()
+
+            function getDims() {
+                return {
+                    x: parseInt($('#xdim').val()),
+                    y: parseInt($('#ydim').val())
+                }
+            }
+            function getRatio(dims) {
+                if (dims == null) dims = getDims()
+                return dims['x'] / dims['y']
+            }
+
+
+            function handle_user_bound_change(ev) {
+                if (ev.target && ev.target === el_user_bound) {
+                    el_user_bound_outline.left = el_user_bound.left
+                    el_user_bound_outline.top = el_user_bound.top
+                    el_user_bound_outline.width = el_user_bound.width * el_user_bound.scaleX
+                    el_user_bound_outline.height = el_user_bound.height * el_user_bound.scaleY
+                }
+            }
+
+
+            input_canvas.on('object:moving', handle_user_bound_change)
+            input_canvas.on('object:scaling', handle_user_bound_change)
+
+            $(input_canvas).hide()
             $('#instruct2').hide()
 
-            el_user_bound.setControlsVisibility({mtr: false, mb: false, mr: false, ml: false, mt: false})
 
             $('#file').on('change', function(ev) {
                 var file = ev.target.files[0],
@@ -94,49 +121,42 @@
                     var new_height, bound
 
                     if (el_image != null) {
-                        canvas.remove(el_image)
+                        input_canvas.remove(el_image)
                     }
 
                     fabric.Image.fromURL(ev.target.result, function (image) {
                         // Clean up
-                        canvas.remove(el_image)
-                        canvas.remove(el_user_bound)
+                        input_canvas.remove(el_image)
+                        input_canvas.remove(el_user_bound_outline)
+                        input_canvas.remove(el_user_bound)
 
                         // Set vars
                         el_image = image
                         image.selectable = false
 
-                        // Resize image height
-                        // ratio = canvas.width / image.width
-                        // image.setScaleX(ratio)
-                        // image.setScaleY(ratio)
-                        // canvas.setHeight(image.height * ratio)
-
                         // Set heights, draw image
-                        canvas.setWidth(image.width)
-                        canvas.setHeight(image.height)
+                        input_canvas.setWidth(image.width)
+                        input_canvas.setHeight(image.height)
 
                         // Toggle vis
-                        canvas.add(el_image)
-                        canvas.add(el_user_bound)
-                        $(canvas).show()
+                        input_canvas.add(el_image)
+                        input_canvas.add(el_user_bound_outline)
+                        input_canvas.add(el_user_bound)
+                        $(input_canvas).show()
                         $('#instruct1').hide()
                         $('#instruct2').show()
                     })
 
                 })
                 $('#xdim, #ydim').on('keyup', function(ev) {
-                    // Parse numeric
-                    numericX = numericY = 0
+                    var ratio
                     try {
-                        numericX = parseInt($('#xdim').val())
-                        numericY = parseInt($('#ydim').val())
+                        ratio = getRatio()
                     } catch(e) {
                         return
                     }
 
                     // Maths/set vals
-                    ratio = numericX / numericY
                     if (ev.target.id == 'xdim') {
                         el_user_bound.setWidth(el_user_bound.height * ratio)
                     } else {
@@ -145,13 +165,31 @@
 
                     // Reset and redraw
                     el_user_bound.setCoords()
-                    canvas.renderAll()
+                    input_canvas.renderAll()
                 })
 
                 reader.readAsDataURL(file)
             })
             $('#save').on('mouseover', function(ev) {
-                $(ev.target).attr('href', canvas.toDataURL('image/png'))
+                var dims,
+                    new_image = fabric.util.object.clone(el_image)
+
+                try {
+                    dims = getDims()
+                } catch(e) {
+                    return
+                }
+                
+                new_image.setScaleX(1 / el_user_bound.scaleX)
+                new_image.setScaleY(1 / el_user_bound.scaleY)
+                new_image.left = -1 * (el_user_bound.left / el_user_bound.scaleX)
+                new_image.top = -1 * (el_user_bound.top / el_user_bound.scaleY)
+                output_canvas.clear()
+                output_canvas.add(new_image)
+                output_canvas.width = dims['x']
+                output_canvas.height = dims['y']
+
+                $(ev.target).attr('href', output_canvas.toDataURL('image/png'))
             })
         })
     </script>
