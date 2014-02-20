@@ -96,12 +96,15 @@
             }
 
 
+            function update_outline() {
+                el_user_bound_outline.left = el_user_bound.left
+                el_user_bound_outline.top = el_user_bound.top
+                el_user_bound_outline.width = el_user_bound.width * el_user_bound.scaleX
+                el_user_bound_outline.height = el_user_bound.height * el_user_bound.scaleY
+            }
             function handle_user_bound_change(ev) {
                 if (ev.target && ev.target === el_user_bound) {
-                    el_user_bound_outline.left = el_user_bound.left
-                    el_user_bound_outline.top = el_user_bound.top
-                    el_user_bound_outline.width = el_user_bound.width * el_user_bound.scaleX
-                    el_user_bound_outline.height = el_user_bound.height * el_user_bound.scaleY
+                    update_outline()
                 }
             }
 
@@ -166,6 +169,7 @@
                     }
 
                     // Reset and redraw
+                    update_outline()
                     el_user_bound.setCoords()
                     input_canvas.renderAll()
                 })
